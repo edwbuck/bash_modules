@@ -1,0 +1,29 @@
+declare -A bmod_modules
+
+function bmod::module_init() {
+  bmod_modules[bmod]=true
+}
+
+function bmod::load_module() {
+  local MODULE=${1}
+  
+  local LIB_DIR=$(dirname ${BASH_SOURCE})
+  if [[ -z "${bmod_modules[${MODULE}]}" ]]; then
+     bmod_modules[${MODULE}]=true
+     source ${LIB_DIR}/${MODULE}.bmod
+     if [[ $(type -t "${MODULE}::module_init" ) == "function" ]]; then
+       ${MODULE}::module_init
+     fi
+  fi 
+}
+
+function bmod::list_modules() {
+  OLDIFS=${IFS}
+  IFS=$'\n'
+  for MODULE in $(sort <<<"${!bmod_modules[@]}"); do
+    printf "%s\n" "${MODULE}"
+  done
+  IFS=${OLDIFS}
+}
+
+bmod::module_init
